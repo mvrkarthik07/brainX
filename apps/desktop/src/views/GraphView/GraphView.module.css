@@ -1,0 +1,151 @@
+.view {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 0;
+  flex: 1;
+}
+
+.topbar,
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-width: 0;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-base);
+}
+
+.footer {
+  border-bottom: none;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--inspector-width);
+  min-height: 0;
+}
+
+.canvasWrap {
+  padding: var(--space-5);
+  min-height: 0;
+}
+
+.canvasCard {
+  height: 100%;
+  min-height: 480px;
+  position: relative;
+}
+
+.details {
+  border-left: 1px solid var(--border-subtle);
+  background: var(--surface-base);
+  padding: var(--space-5);
+  overflow: auto;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.subtitle {
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.inputRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.canvasEmpty,
+.canvasLoading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-6);
+  text-align: center;
+  color: var(--text-secondary);
+  background: var(--state-backdrop);
+}
+
+.canvasLoading {
+  color: var(--text-primary);
+}
+
+.canvasLoadingCard,
+.canvasEmptyCard {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 360px;
+}
+
+.canvasLoadingTitle,
+.canvasEmptyTitle {
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 30px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.detailsHeading {
+  margin-bottom: var(--space-4);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+@media (max-width: 1260px) {
+  .topbar,
+  .footer {
+    flex-wrap: wrap;
+  }
+
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .details {
+    border-left: none;
+    border-top: 1px solid var(--border-subtle);
+    max-height: 34vh;
+  }
+}
+
+@media (max-width: 900px) {
+  .topbar,
+  .footer,
+  .canvasWrap,
+  .details {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
+
+  .inputRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .canvasCard {
+    min-height: 360px;
+  }
+
+  .title {
+    font-size: 20px;
+  }
+}

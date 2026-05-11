@@ -1,0 +1,64 @@
+.item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 36px;
+  min-width: 0;
+  padding: 0 12px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  transition:
+    background var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth);
+}
+
+.collapsed {
+  justify-content: center;
+  padding: 0;
+  gap: 0;
+}
+
+.item:hover {
+  background: var(--state-hover);
+}
+
+.active {
+  background: var(--state-selected);
+  color: var(--text-primary);
+}
+
+.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  bottom: 7px;
+  width: 2px;
+  border-radius: var(--radius-full);
+  background: var(--accent-base);
+}
+
+.icon {
+  color: var(--text-tertiary);
+  transition: color var(--duration-fast) var(--ease-smooth);
+}
+
+.active .icon {
+  color: var(--accent-base);
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.labelHidden {
+  width: 0;
+  opacity: 0;
+  overflow: hidden;
+}

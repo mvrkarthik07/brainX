@@ -1,0 +1,126 @@
+.titlebar {
+  height: var(--topbar-height);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 180px;
+  align-items: center;
+  padding: 0 var(--space-4);
+  background: var(--surface-base);
+  border-bottom: 1px solid var(--border-subtle);
+  user-select: none;
+  -webkit-user-select: none;
+  app-region: drag;
+  -webkit-app-region: drag;
+}
+
+.windowControls {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  app-region: no-drag;
+  -webkit-app-region: no-drag;
+}
+
+.control {
+  width: var(--window-control-size);
+  height: var(--window-control-size);
+  border-radius: var(--radius-full);
+  border: none;
+  cursor: pointer;
+  transition: opacity var(--duration-fast) var(--ease-smooth);
+  app-region: no-drag;
+  -webkit-app-region: no-drag;
+}
+
+.close {
+  background: var(--color-window-close);
+}
+
+.minimize {
+  background: var(--color-window-minimize);
+  margin: 0 var(--space-1);
+}
+
+.maximize {
+  background: var(--color-window-maximize);
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+  padding: 0 var(--space-4);
+  min-height: 100%;
+  cursor: grab;
+  app-region: drag;
+  -webkit-app-region: drag;
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: var(--accent-base);
+  text-shadow: 0 0 20px var(--accent-glow);
+  white-space: nowrap;
+}
+
+.right {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-width: 0;
+  min-height: 100%;
+  cursor: grab;
+  app-region: drag;
+  -webkit-app-region: drag;
+}
+
+.statusBar {
+  min-height: var(--statusbar-height);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 0 var(--space-4);
+  background: var(--surface-base);
+  border-top: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+.statusList {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.statusItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.statusValue {
+  color: var(--text-primary);
+}
+
+@media (max-width: 1240px) {
+  .statusBar {
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: var(--space-1);
+    padding-bottom: var(--space-1);
+  }
+
+  .statusList:last-child {
+    justify-content: flex-end;
+  }
+}

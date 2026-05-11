@@ -1,0 +1,16 @@
+@import "./tokens.css";
+@import "./typography.css";
+@import "./reset.css";
+@import "./animations.css";
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}

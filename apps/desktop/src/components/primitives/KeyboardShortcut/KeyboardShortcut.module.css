@@ -1,0 +1,19 @@
+.shortcut {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.key {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-sm);
+  padding: 1px 5px;
+}
+
+.label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}

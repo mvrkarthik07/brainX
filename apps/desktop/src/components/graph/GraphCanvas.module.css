@@ -1,0 +1,14 @@
+.graphCanvas {
+  position: relative;
+  min-height: 100%;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  background: var(--graph-bg);
+  border: 1px solid var(--border-dim);
+}
+
+.svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}

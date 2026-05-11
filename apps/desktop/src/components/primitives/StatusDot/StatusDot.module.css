@@ -1,0 +1,27 @@
+.statusDot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+}
+
+.statusDot[data-status="active"] {
+  background: var(--color-success);
+}
+
+.statusDot[data-status="active"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-full);
+  background: inherit;
+  animation: statusPing var(--duration-slower) var(--ease-out-expo) infinite;
+}
+
+.statusDot[data-status="loading"] {
+  background: var(--color-warning);
+}
+
+.statusDot[data-status="error"] {
+  background: var(--color-danger);
+}

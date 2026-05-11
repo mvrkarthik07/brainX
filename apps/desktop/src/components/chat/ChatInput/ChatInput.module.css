@@ -1,0 +1,126 @@
+.inputPanel {
+  padding: var(--space-4);
+  background: var(--surface-base);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.inputPanelCentered {
+  width: 100%;
+  max-width: var(--chat-max-width);
+  margin: 0 auto;
+  padding: 0;
+  background: transparent;
+  border-top: none;
+}
+
+.inputWrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  background: var(--surface-inset);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  padding: var(--space-3) var(--space-4);
+  transition:
+    border-color var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth);
+}
+
+.inputWrapperCentered {
+  align-items: center;
+  min-height: 60px;
+  border-color: var(--border-accent);
+  box-shadow:
+    0 0 0 1px var(--border-accent),
+    var(--shadow-glow),
+    var(--shadow-accent);
+}
+
+.inputWrapper:focus-within {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-glow);
+}
+
+.textarea {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  min-height: 22px;
+  max-height: 120px;
+}
+
+.textarea:focus,
+.textarea:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+.textareaCentered {
+  text-align: left;
+}
+
+.textareaCentered::placeholder {
+  text-align: left;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+.inputWrapper[data-streaming="true"] {
+  border-color: var(--accent-base);
+  animation: streamingPulse 2s var(--ease-smooth) infinite;
+}
+
+@keyframes streamingPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  50% {
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+}
+
+@media (max-width: 900px) {
+  .inputPanel {
+    padding: var(--space-3);
+  }
+
+  .inputWrapper {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .actions {
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 640px) {
+  .actions {
+    width: 100%;
+  }
+
+  .actions > * {
+    flex: 1;
+  }
+}

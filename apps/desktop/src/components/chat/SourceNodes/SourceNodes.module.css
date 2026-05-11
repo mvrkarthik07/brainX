@@ -1,0 +1,58 @@
+.sourceList {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.sourceLabel {
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+.sourceChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-smooth),
+    background var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth);
+}
+
+.sourceChip:focus-visible {
+  outline: none;
+  box-shadow: var(--state-focus-ring);
+}
+
+.sourceChipDisabled {
+  cursor: default;
+  color: var(--text-ghost);
+}
+
+.sourceChipDisabled:hover {
+  border-color: var(--border-dim);
+  background: var(--surface-raised);
+  color: var(--text-ghost);
+}
+
+.sourceChipIcon {
+  flex-shrink: 0;
+  display: block;
+}
+
+.sourceChip:hover {
+  border-color: var(--border-accent);
+  background: var(--accent-dim);
+  color: var(--accent-base);
+}

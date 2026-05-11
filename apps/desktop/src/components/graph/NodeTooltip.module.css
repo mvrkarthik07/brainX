@@ -1,0 +1,51 @@
+.tooltip {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.emptyState {
+  color: var(--text-secondary);
+}
+
+.section {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.label {
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.value {
+  color: var(--text-primary);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.monoValue {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+
+.properties {
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--surface-inset);
+  border: 1px solid var(--border-dim);
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 18px;
+  color: var(--text-secondary);
+  min-width: 0;
+}

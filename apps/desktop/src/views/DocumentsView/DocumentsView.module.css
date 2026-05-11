@@ -1,0 +1,118 @@
+.view {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+}
+
+.sidebar {
+  border-right: 1px solid var(--border-subtle);
+  padding: var(--space-5);
+  overflow: auto;
+  background: var(--surface-base);
+  min-width: 0;
+}
+
+.main {
+  padding: var(--space-6);
+  overflow: auto;
+  min-width: 0;
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: var(--space-4);
+}
+
+.chunkList {
+  margin-top: var(--space-6);
+  display: grid;
+  gap: var(--space-3);
+}
+
+.list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.item {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  padding: var(--space-4);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-smooth),
+    background var(--duration-fast) var(--ease-smooth);
+}
+
+.item:hover {
+  border-color: var(--border-default);
+  background: var(--surface-elevated);
+}
+
+.item:focus-visible {
+  outline: none;
+  box-shadow: var(--state-focus-ring);
+}
+
+.itemTitle {
+  color: var(--text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemMeta {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+
+.chunk {
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  padding: var(--space-4);
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.emptyState {
+  color: var(--text-secondary);
+}
+
+@media (max-width: 1260px) {
+  .view {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(220px, 32vh) minmax(0, 1fr);
+  }
+
+  .sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+}
+
+@media (max-width: 900px) {
+  .sidebar,
+  .main {
+    padding: var(--space-4);
+  }
+}
+
+@media (max-width: 720px) {
+  .view {
+    grid-template-rows: minmax(180px, 28vh) minmax(0, 1fr);
+  }
+
+  .heading {
+    font-size: 20px;
+  }
+}
