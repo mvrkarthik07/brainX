@@ -1,4 +1,3 @@
-import numpy as np
 import requests
 
 from brain.config.settings import (
@@ -9,28 +8,30 @@ from brain.config.settings import (
 )
 
 
-def _normalize_embedding(vector: list[float]) -> list[float]:
-    array = np.asarray(vector, dtype=np.float32)
-
-    if array.shape != (EMBEDDING_DIM,):
+def _validate_embedding(vector: object) -> list[float]:
+    if not isinstance(vector, list):
+        raise RuntimeError("Ollama embedding response was not a vector list")
+    if len(vector) != EMBEDDING_DIM:
         raise ValueError(
-            f"Ollama embedding dimension mismatch: expected {EMBEDDING_DIM}, got {array.shape[0]}"
+            f"Ollama embedding dimension mismatch: expected {EMBEDDING_DIM}, got {len(vector)}"
         )
 
-    norm = np.linalg.norm(array)
-    if norm == 0:
-        raise ValueError("Ollama returned a zero-length embedding vector")
+    validated: list[float] = []
+    for index, value in enumerate(vector):
+        if not isinstance(value, (int, float)):
+            raise RuntimeError(f"Ollama embedding value at index {index} was not numeric")
+        validated.append(float(value))
 
-    return (array / norm).tolist()
+    return validated
 
 
-def _request_embeddings(text_input: str | list[str]) -> list[list[float]]:
+def _request_embedding(text: str) -> list[float]:
     embed_url = f"{OLLAMA_BASE_URL}/api/embed"
 
     try:
         response = requests.post(
             embed_url,
-            json={"model": EMBEDDING_MODEL, "input": text_input},
+            json={"model": EMBEDDING_MODEL, "input": text},
             timeout=OLLAMA_EMBED_TIMEOUT_SECONDS,
         )
         response.raise_for_status()
@@ -43,37 +44,27 @@ def _request_embeddings(text_input: str | list[str]) -> list[list[float]]:
     embeddings = payload.get("embeddings")
     if not isinstance(embeddings, list) or not embeddings:
         raise RuntimeError("Ollama embeddings response did not include any embeddings")
+    if len(embeddings) != 1:
+        raise RuntimeError(f"Expected exactly one embedding, got {len(embeddings)}")
 
-    normalized_embeddings = []
-    for index, embedding in enumerate(embeddings):
-        if not isinstance(embedding, list):
-            raise RuntimeError(f"Ollama embedding at index {index} was not a vector list")
-        normalized_embeddings.append(_normalize_embedding(embedding))
-
-    return normalized_embeddings
+    return _validate_embedding(embeddings[0])
 
 
 def embed_text(text: str) -> list[float]:
     if not text or not text.strip():
         raise ValueError("embed_text requires non-empty text")
 
-    return _request_embeddings(text)[0]
+    return _request_embedding(text.strip())
 
 
 def embed_batch(texts: list[str]) -> list[list[float]]:
     if not texts:
         raise ValueError("embed_batch requires at least one text")
 
-    cleaned_texts = []
+    embeddings: list[list[float]] = []
     for index, text in enumerate(texts):
         if not text or not text.strip():
             raise ValueError(f"embed_batch received empty text at index {index}")
-        cleaned_texts.append(text)
-
-    embeddings = _request_embeddings(cleaned_texts)
-    if len(embeddings) != len(cleaned_texts):
-        raise RuntimeError(
-            f"Ollama embedding count mismatch: expected {len(cleaned_texts)}, got {len(embeddings)}"
-        )
+        embeddings.append(_request_embedding(text.strip()))
 
     return embeddings

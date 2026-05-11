@@ -1,0 +1,5 @@
+Rust performance notes for BrainX experiments.
+Prefer deterministic benchmarks over ad hoc timing output.
+Profile memory pressure separately from throughput.
+Use release builds when comparing parser performance.
+Measure chunk extraction latency before and after graph updates.
