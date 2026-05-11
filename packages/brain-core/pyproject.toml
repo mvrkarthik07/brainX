@@ -1,0 +1,13 @@
+[project]
+name = "brain-core"
+version = "0.1.0"
+description = "Core local intelligence engine for BrainX"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["brain*"]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"

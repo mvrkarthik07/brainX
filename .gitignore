@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environment
+.venv/
+
+# Local state
+data/users/
+*.db
+*.faiss
+
+# Environment files
+.env
+
+# macOS
+.DS_Store
+
+# VS Code optional
+.vscode/
