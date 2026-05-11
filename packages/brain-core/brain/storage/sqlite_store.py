@@ -1,6 +1,7 @@
 import hashlib
 import json
 import sqlite3
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -284,7 +285,28 @@ def get_chunks_for_document(document_id: str) -> list[dict[str, Any]]:
         return [_row_to_chunk(row) for row in rows]
 
 
+def get_chunks_by_ids(chunk_ids: list[str]) -> list[dict[str, Any]]:
+    initialize_sqlite()
+    if not chunk_ids:
+        return []
+
+    placeholders = ",".join("?" for _ in chunk_ids)
+    order_map = {chunk_id: index for index, chunk_id in enumerate(chunk_ids)}
+    with get_connection() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT *
+            FROM chunks
+            WHERE id IN ({placeholders})
+            """,
+            chunk_ids,
+        ).fetchall()
+    chunks = [_row_to_chunk(row) for row in rows]
+    return sorted(chunks, key=lambda chunk: order_map.get(chunk["id"], len(order_map)))
+
+
 def get_concept(concept_id: str) -> dict[str, Any]:
+    initialize_sqlite()
     with get_connection() as conn:
         row = conn.execute(
             "SELECT * FROM concepts WHERE id = ?",
@@ -293,6 +315,44 @@ def get_concept(concept_id: str) -> dict[str, Any]:
         if row is None:
             raise ValueError(f"Concept '{concept_id}' was not found")
         return _row_to_concept(row)
+
+
+def get_concepts_for_chunk(chunk_id: str) -> list[dict[str, Any]]:
+    initialize_sqlite()
+    with get_connection() as conn:
+        rows = conn.execute(
+            """
+            SELECT c.*
+            FROM concepts c
+            INNER JOIN chunk_concepts cc ON cc.concept_id = c.id
+            WHERE cc.chunk_id = ?
+            ORDER BY c.frequency DESC, c.label ASC
+            """,
+            (chunk_id,),
+        ).fetchall()
+    return [_row_to_concept(row) for row in rows]
+
+
+def get_documents_by_ids(document_ids: list[str]) -> list[dict[str, Any]]:
+    initialize_sqlite()
+    if not document_ids:
+        return []
+
+    placeholders = ",".join("?" for _ in document_ids)
+    order_map = {document_id: index for index, document_id in enumerate(document_ids)}
+    with get_connection() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT d.*, COUNT(c.id) AS chunk_count
+            FROM documents d
+            LEFT JOIN chunks c ON c.document_id = d.id
+            WHERE d.id IN ({placeholders})
+            GROUP BY d.id
+            """,
+            document_ids,
+        ).fetchall()
+    documents = [_row_to_document(row) for row in rows]
+    return sorted(documents, key=lambda document: order_map.get(document["id"], len(order_map)))
 
 
 def map_vector(faiss_id: int, chunk_id: str, document_id: str) -> None:
@@ -348,6 +408,166 @@ def get_vector_mappings(
         return [_row_to_vector_mapping(row) for row in rows]
 
 
+def save_interaction(
+    query_text: str,
+    rewritten_query: str | None,
+    response_text: str,
+    nodes_traversed: list[Any],
+    edges_traversed: list[Any],
+    user_id: str = DEFAULT_USER_ID,
+    interaction_id: str | None = None,
+) -> dict[str, Any]:
+    initialize_sqlite()
+
+    stored_interaction_id = interaction_id or str(uuid.uuid4())
+    timestamp = utc_now_iso()
+
+    with get_connection() as conn:
+        conn.execute(
+            """
+            INSERT INTO interactions (
+                id,
+                user_id,
+                query_text,
+                rewritten_query,
+                response_text,
+                rating,
+                timestamp,
+                nodes_traversed_json,
+                edges_traversed_json
+            )
+            VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?)
+            """,
+            (
+                stored_interaction_id,
+                user_id,
+                query_text,
+                rewritten_query,
+                response_text,
+                timestamp,
+                _encode_any_json(nodes_traversed),
+                _encode_any_json(edges_traversed),
+            ),
+        )
+        conn.commit()
+
+    interaction = get_interaction(stored_interaction_id)
+    if interaction is None:
+        raise RuntimeError("Failed to save interaction")
+    return interaction
+
+
+def get_interaction(interaction_id: str) -> dict[str, Any] | None:
+    initialize_sqlite()
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT * FROM interactions WHERE id = ?",
+            (interaction_id,),
+        ).fetchone()
+    return _row_to_interaction(row) if row is not None else None
+
+
+def save_interaction_trace(
+    interaction_id: str,
+    nodes: list[Any],
+    edges: list[Any],
+    trace: dict[str, Any],
+) -> dict[str, Any]:
+    initialize_sqlite()
+    created_at = utc_now_iso()
+
+    with get_connection() as conn:
+        conn.execute(
+            """
+            INSERT INTO interaction_traces (
+                interaction_id,
+                nodes_json,
+                edges_json,
+                trace_json,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(interaction_id) DO UPDATE SET
+                nodes_json = excluded.nodes_json,
+                edges_json = excluded.edges_json,
+                trace_json = excluded.trace_json,
+                created_at = excluded.created_at
+            """,
+            (
+                interaction_id,
+                _encode_any_json(nodes),
+                _encode_any_json(edges),
+                _encode_any_json(trace),
+                created_at,
+            ),
+        )
+        conn.commit()
+
+    trace_row = get_interaction_trace(interaction_id)
+    if trace_row is None:
+        raise RuntimeError("Failed to save interaction trace")
+    return trace_row
+
+
+def get_interaction_trace(interaction_id: str) -> dict[str, Any] | None:
+    initialize_sqlite()
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT * FROM interaction_traces WHERE interaction_id = ?",
+            (interaction_id,),
+        ).fetchone()
+    return _row_to_interaction_trace(row) if row is not None else None
+
+
+def get_full_saved_trace(interaction_id: str) -> dict[str, Any] | None:
+    interaction = get_interaction(interaction_id)
+    if interaction is None:
+        return None
+
+    trace_row = get_interaction_trace(interaction_id)
+    if trace_row is None:
+        return {
+            "original_query": interaction["query_text"],
+            "rewritten_query": interaction["rewritten_query"],
+            "vector_hits": [],
+            "seed_chunk_ids": [],
+            "seed_node_ids": [],
+            "retrieved_chunks": [],
+            "graph_nodes": [],
+            "graph_edges": interaction["edges_traversed"],
+            "nodes_traversed": interaction["nodes_traversed"],
+            "edges_traversed": interaction["edges_traversed"],
+            "context_text": "",
+            "latency_ms": {},
+        }
+
+    trace_payload = dict(trace_row["trace"])
+    trace_payload.setdefault("original_query", interaction["query_text"])
+    trace_payload.setdefault("rewritten_query", interaction["rewritten_query"])
+    trace_payload.setdefault("graph_nodes", trace_row["nodes"])
+    trace_payload.setdefault("graph_edges", trace_row["edges"])
+    trace_payload.setdefault("nodes_traversed", interaction["nodes_traversed"])
+    trace_payload.setdefault("edges_traversed", interaction["edges_traversed"])
+    trace_payload.setdefault("vector_hits", [])
+    trace_payload.setdefault("seed_chunk_ids", [])
+    trace_payload.setdefault("seed_node_ids", [])
+    trace_payload.setdefault("retrieved_chunks", [])
+    trace_payload.setdefault("context_text", "")
+    trace_payload.setdefault("latency_ms", {})
+    return trace_payload
+
+
+def update_interaction_rating(interaction_id: str, rating: int) -> bool:
+    initialize_sqlite()
+    with get_connection() as conn:
+        updated_rows = conn.execute(
+            "UPDATE interactions SET rating = ? WHERE id = ?",
+            (rating, interaction_id),
+        ).rowcount
+        conn.commit()
+    return updated_rows > 0
+
+
 def _refresh_user_document_count(conn, user_id: str) -> None:
     document_count = conn.execute(
         "SELECT COUNT(*) AS count FROM documents WHERE user_id = ?",
@@ -368,6 +588,10 @@ def _compute_checksum(text: str) -> str:
 
 
 def _encode_json(value: dict[str, Any]) -> str:
+    return json.dumps(value, ensure_ascii=True, sort_keys=True)
+
+
+def _encode_any_json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=True, sort_keys=True)
 
 
@@ -428,3 +652,36 @@ def _row_to_vector_mapping(row: sqlite3.Row) -> dict[str, Any]:
         "document_id": row["document_id"],
         "created_at": row["created_at"],
     }
+
+
+def _row_to_interaction(row: sqlite3.Row) -> dict[str, Any]:
+    return {
+        "id": row["id"],
+        "user_id": row["user_id"],
+        "query_text": row["query_text"],
+        "rewritten_query": row["rewritten_query"],
+        "response_text": row["response_text"],
+        "rating": row["rating"],
+        "timestamp": row["timestamp"],
+        "nodes_traversed": _decode_any_json(row["nodes_traversed_json"], default=[]),
+        "edges_traversed": _decode_any_json(row["edges_traversed_json"], default=[]),
+    }
+
+
+def _row_to_interaction_trace(row: sqlite3.Row) -> dict[str, Any]:
+    return {
+        "interaction_id": row["interaction_id"],
+        "nodes": _decode_any_json(row["nodes_json"], default=[]),
+        "edges": _decode_any_json(row["edges_json"], default=[]),
+        "trace": _decode_any_json(row["trace_json"], default={}),
+        "created_at": row["created_at"],
+    }
+
+
+def _decode_any_json(value: str | None, default: Any) -> Any:
+    if not value:
+        return default
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError:
+        return default

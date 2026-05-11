@@ -1,7 +1,13 @@
 import json
 
 from brain.graph.factory import get_graph_store
-from brain.storage.sqlite_store import get_connection, initialize_sqlite
+from brain.storage.sqlite_store import (
+    get_interaction,
+    get_full_saved_trace,
+    get_interaction_trace,
+    initialize_sqlite,
+    update_interaction_rating,
+)
 
 RATING_DELTAS = {
     1: -0.3,
@@ -11,21 +17,46 @@ RATING_DELTAS = {
     5: 0.3,
 }
 
+ALLOWED_FEEDBACK_EDGE_TYPES = {
+    "HAS_CONCEPT",
+    "CO_OCCURS",
+    "SEMANTICALLY_SIMILAR",
+    "QUERIED_BY",
+    "RATED_HIGH",
+    "USER_RELEVANCE",
+}
+
 
 def apply_feedback(interaction_id: str, rating: int) -> dict:
     if rating not in RATING_DELTAS:
         raise ValueError("rating must be an integer between 1 and 5")
 
     initialize_sqlite()
-    edge_ids = _load_traversed_edge_ids(interaction_id)
+    interaction = get_interaction(interaction_id)
+    if interaction is None:
+        raise ValueError(f"Interaction '{interaction_id}' was not found")
+
+    traversed_edges = _load_traversed_edges(interaction_id)
     delta = RATING_DELTAS[rating]
     should_flag = rating == 1
     graph_store = get_graph_store()
 
     edges_mutated = 0
+    edges_skipped = 0
     flagged_edges = 0
 
-    for edge_id in edge_ids:
+    seen_edge_ids: set[str] = set()
+    for edge in traversed_edges:
+        edge_id = edge.get("id")
+        edge_type = edge.get("edge_type")
+        if not isinstance(edge_id, str) or edge_id in seen_edge_ids:
+            continue
+        seen_edge_ids.add(edge_id)
+
+        if edge_type not in ALLOWED_FEEDBACK_EDGE_TYPES:
+            edges_skipped += 1
+            continue
+
         update_result = graph_store.update_edge_feedback(
             edge_id=edge_id,
             delta=delta,
@@ -37,14 +68,7 @@ def apply_feedback(interaction_id: str, rating: int) -> dict:
         if update_result["flagged"]:
             flagged_edges += 1
 
-    with get_connection() as conn:
-        updated_rows = conn.execute(
-            "UPDATE interactions SET rating = ? WHERE id = ?",
-            (rating, interaction_id),
-        ).rowcount
-        conn.commit()
-
-    if updated_rows == 0:
+    if not update_interaction_rating(interaction_id, rating):
         raise ValueError(f"Interaction '{interaction_id}' was not found")
 
     return {
@@ -52,53 +76,27 @@ def apply_feedback(interaction_id: str, rating: int) -> dict:
         "rating": rating,
         "delta": delta,
         "edges_mutated": edges_mutated,
+        "edges_skipped": edges_skipped,
         "flagged_edges": flagged_edges,
     }
 
 
-def _load_traversed_edge_ids(interaction_id: str) -> list[str]:
-    with get_connection() as conn:
-        interaction_row = conn.execute(
-            "SELECT edges_traversed_json FROM interactions WHERE id = ?",
-            (interaction_id,),
-        ).fetchone()
-        if interaction_row is None:
-            raise ValueError(f"Interaction '{interaction_id}' was not found")
+def _load_traversed_edges(interaction_id: str) -> list[dict]:
+    full_trace = get_full_saved_trace(interaction_id)
+    if full_trace is not None:
+        edges = full_trace.get("edges_traversed", [])
+        if isinstance(edges, list):
+            return [edge for edge in edges if isinstance(edge, dict)]
 
-        trace_row = conn.execute(
-            "SELECT edges_json FROM interaction_traces WHERE interaction_id = ?",
-            (interaction_id,),
-        ).fetchone()
+    trace = get_interaction_trace(interaction_id)
+    if trace is not None and isinstance(trace.get("edges"), list):
+        return [edge for edge in trace["edges"] if isinstance(edge, dict)]
 
-    if trace_row is not None:
-        return _extract_edge_ids(trace_row["edges_json"])
+    interaction = get_interaction(interaction_id)
+    if interaction is None:
+        raise ValueError(f"Interaction '{interaction_id}' was not found")
 
-    return _extract_edge_ids(interaction_row["edges_traversed_json"])
-
-
-def _extract_edge_ids(raw_json: str) -> list[str]:
-    try:
-        payload = json.loads(raw_json or "[]")
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"Invalid stored interaction trace JSON: {exc}") from exc
-
-    if not isinstance(payload, list):
-        raise ValueError("Stored interaction trace edges must be a JSON list")
-
-    edge_ids: list[str] = []
-    seen_edge_ids: set[str] = set()
-
-    for item in payload:
-        edge_id = None
-        if isinstance(item, str):
-            edge_id = item
-        elif isinstance(item, dict):
-            candidate = item.get("id")
-            if isinstance(candidate, str):
-                edge_id = candidate
-
-        if edge_id and edge_id not in seen_edge_ids:
-            seen_edge_ids.add(edge_id)
-            edge_ids.append(edge_id)
-
-    return edge_ids
+    edges = interaction.get("edges_traversed", [])
+    if isinstance(edges, list):
+        return [edge for edge in edges if isinstance(edge, dict)]
+    return []

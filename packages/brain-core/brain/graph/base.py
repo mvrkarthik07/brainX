@@ -116,6 +116,8 @@ class GraphStore(Protocol):
         max_hops: int,
         edge_threshold: float,
         hop_decay: float,
+        max_nodes: int = 80,
+        max_edges: int = 80,
     ) -> GraphTraversalResult:
         ...
 

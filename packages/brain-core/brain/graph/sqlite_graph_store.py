@@ -322,6 +322,8 @@ class SQLiteGraphStore:
         max_hops: int,
         edge_threshold: float,
         hop_decay: float,
+        max_nodes: int = 80,
+        max_edges: int = 80,
     ) -> GraphTraversalResult:
         self.initialize()
 
@@ -331,6 +333,10 @@ class SQLiteGraphStore:
             raise ValueError("edge_threshold must be non-negative")
         if not 0.0 <= hop_decay <= 1.0:
             raise ValueError("hop_decay must be between 0.0 and 1.0")
+        if max_nodes <= 0:
+            raise ValueError("max_nodes must be positive")
+        if max_edges <= 0:
+            raise ValueError("max_edges must be positive")
 
         with get_connection() as conn:
             valid_seed_ids = [
@@ -343,6 +349,8 @@ class SQLiteGraphStore:
             heapq.heapify(frontier)
 
             while frontier:
+                if len(visited_nodes) >= max_nodes or len(traversed_edges) >= max_edges:
+                    break
                 negative_score, current_hop, node_id = heapq.heappop(frontier)
                 current_score = -negative_score
                 if current_hop >= max_hops:
@@ -351,6 +359,8 @@ class SQLiteGraphStore:
                     continue
 
                 for edge in self._get_connected_edges(conn, node_id):
+                    if len(visited_nodes) >= max_nodes or len(traversed_edges) >= max_edges:
+                        break
                     edge_record = self._row_to_edge(edge)
                     if edge_record["effective_weight"] < edge_threshold:
                         continue
@@ -367,6 +377,8 @@ class SQLiteGraphStore:
                     previous_score = best_scores.get(neighbor_id, 0.0)
                     if next_score > previous_score:
                         best_scores[neighbor_id] = next_score
+                        if neighbor_id not in visited_nodes and len(visited_nodes) >= max_nodes:
+                            continue
                         visited_nodes.add(neighbor_id)
                         traversed_edges[edge_record["id"]] = edge_record
                         heapq.heappush(frontier, (-next_score, current_hop + 1, neighbor_id))

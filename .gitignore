@@ -22,3 +22,8 @@ data/users/
 
 # VS Code optional
 .vscode/
+
+# Frontend / desktop build outputs
+node_modules/
+dist/
+target/
