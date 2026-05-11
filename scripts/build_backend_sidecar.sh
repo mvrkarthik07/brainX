@@ -35,12 +35,15 @@ echo "  python: ${PYTHON_BIN}"
 echo "  entry:  ${ENTRYPOINT}"
 echo "  out:    ${OUT_DIR}"
 
+SCHEMA_SQL="${ROOT_DIR}/packages/brain-core/brain/storage/schema.sql"
+
 "${PYTHON_BIN}" -m PyInstaller \
   --noconfirm \
   --clean \
   --name brainx-backend \
   --onefile \
   --distpath "${OUT_DIR}" \
+  --add-data "${SCHEMA_SQL}:brain/storage" \
   "${ENTRYPOINT}"
 
 TARGET_TRIPLE="$(rustc --print host-tuple 2>/dev/null || true)"
