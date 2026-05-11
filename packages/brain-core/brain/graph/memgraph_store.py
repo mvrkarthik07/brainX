@@ -64,12 +64,66 @@ def memgraph_health() -> dict:
         default_user_exists = initialize_memgraph()
         return {
             "ok": True,
+            "backend": "memgraph",
             "uri": MEMGRAPH_URI,
             "default_user_exists": default_user_exists,
         }
     except Exception as exc:
         return {
             "ok": False,
+            "backend": "memgraph",
             "uri": MEMGRAPH_URI,
             "error": str(exc),
         }
+
+
+class MemgraphGraphStore:
+    backend = "memgraph"
+
+    def initialize(self) -> None:
+        initialize_memgraph()
+
+    def health(self) -> dict:
+        return memgraph_health()
+
+    def build_node_id(self, node_type: str, entity_id: str) -> str:
+        normalized_type = node_type.strip().lower()
+        if entity_id.startswith(f"{normalized_type}:"):
+            return entity_id
+        return f"{normalized_type}:{entity_id}"
+
+    def upsert_user(self, *args, **kwargs):
+        raise NotImplementedError("Legacy Memgraph graph backend is no longer the default product path")
+
+    def upsert_document(self, *args, **kwargs):
+        raise NotImplementedError("Legacy Memgraph graph backend is no longer the default product path")
+
+    def upsert_chunk(self, *args, **kwargs):
+        raise NotImplementedError("Legacy Memgraph graph backend is no longer the default product path")
+
+    def upsert_concept(self, *args, **kwargs):
+        raise NotImplementedError("Legacy Memgraph graph backend is no longer the default product path")
+
+    def upsert_edge(self, *args, **kwargs):
+        raise NotImplementedError("Legacy Memgraph graph backend is no longer the default product path")
+
+    def get_node(self, *args, **kwargs):
+        raise NotImplementedError("Legacy Memgraph graph backend is no longer the default product path")
+
+    def get_edges_from(self, *args, **kwargs):
+        raise NotImplementedError("Legacy Memgraph graph backend is no longer the default product path")
+
+    def get_edges_between(self, *args, **kwargs):
+        raise NotImplementedError("Legacy Memgraph graph backend is no longer the default product path")
+
+    def get_neighborhood(self, *args, **kwargs):
+        raise NotImplementedError("Legacy Memgraph graph backend is no longer the default product path")
+
+    def traverse(self, *args, **kwargs):
+        raise NotImplementedError("Legacy Memgraph graph backend is no longer the default product path")
+
+    def update_edge_feedback(self, *args, **kwargs):
+        raise NotImplementedError("Legacy Memgraph graph backend is no longer the default product path")
+
+    def export_graph(self, *args, **kwargs):
+        raise NotImplementedError("Legacy Memgraph graph backend is no longer the default product path")

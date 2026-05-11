@@ -14,6 +14,7 @@ def get_connection():
 
     conn = sqlite3.connect(SQLITE_DB_PATH)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 def initialize_sqlite():
@@ -65,4 +66,3 @@ def sql_health() -> dict:
             "error": str(e),
         }
     
-
