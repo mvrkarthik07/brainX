@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from brain.config.settings import DEFAULT_USER_DIR, PROJECT_ROOT, SQLITE_DB_PATH
+from brain.storage.migrations import apply_migrations
 
 DEFAULT_USER_ID = "default"
 
@@ -25,11 +26,8 @@ def get_connection():
 
 
 def initialize_sqlite() -> None:
-    schema_path = PROJECT_ROOT / "packages" / "brain-core" / "brain" / "storage" / "schema.sql"
-
     with get_connection() as conn:
-        with open(schema_path, "r", encoding="utf-8") as schema_file:
-            conn.executescript(schema_file.read())
+        apply_migrations(conn)
 
         conn.execute(
             """

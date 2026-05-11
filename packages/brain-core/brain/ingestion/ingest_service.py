@@ -1,5 +1,7 @@
+from dataclasses import dataclass
 from pathlib import Path
 
+from brain.config.settings import UPLOADED_FILES_DIR
 from brain.embeddings.ollama_embedder import embed_text
 from brain.graph.graph_builder import build_graph_for_document
 from brain.ingestion.chunker import chunk_document
@@ -14,6 +16,13 @@ from brain.storage.sqlite_store import (
     link_chunk_concept,
 )
 from brain.vector.faiss_store import add_embedding
+
+
+@dataclass(slots=True)
+class UploadedIngestFile:
+    filename: str
+    content: bytes
+    relative_path: str | None = None
 
 
 def ingest_file(path: str | Path) -> dict:
@@ -88,6 +97,72 @@ def ingest_file(path: str | Path) -> dict:
     }
 
 
+def ingest_uploaded_file(
+    *,
+    filename: str,
+    content: bytes,
+    relative_path: str | None = None,
+) -> dict:
+    if not filename:
+        raise ValueError("Uploaded file is missing a filename")
+
+    file_suffix = Path(filename).suffix.lower()
+    if file_suffix not in SUPPORTED_FILE_TYPES:
+        raise ValueError(f"Unsupported file type: {file_suffix or '<none>'}")
+
+    stored_path = _store_uploaded_file(
+        filename=filename,
+        content=content,
+        relative_path=relative_path,
+    )
+    return ingest_file(stored_path)
+
+
+def ingest_uploaded_files(files: list[UploadedIngestFile]) -> dict:
+    if not files:
+        raise ValueError("At least one file upload is required")
+
+    summary = {
+        "documents_added": 0,
+        "chunks_created": 0,
+        "concepts_extracted": 0,
+        "vectors_added": 0,
+        "graph_nodes_upserted": 0,
+        "graph_edges_upserted": 0,
+        "errors": [],
+        "document": None,
+    }
+
+    successful_documents = []
+    for uploaded_file in files:
+        display_path = uploaded_file.relative_path or uploaded_file.filename
+        try:
+            result = ingest_uploaded_file(
+                filename=uploaded_file.filename,
+                content=uploaded_file.content,
+                relative_path=uploaded_file.relative_path,
+            )
+        except Exception as exc:
+            summary["errors"].append({"path": display_path, "error": str(exc)})
+            continue
+
+        successful_documents.append(result.get("document"))
+        for key in (
+            "documents_added",
+            "chunks_created",
+            "concepts_extracted",
+            "vectors_added",
+            "graph_nodes_upserted",
+            "graph_edges_upserted",
+        ):
+            summary[key] += result[key]
+
+    if len(successful_documents) == 1:
+        summary["document"] = successful_documents[0]
+
+    return summary
+
+
 def ingest_folder(path: str | Path, recursive: bool = True) -> dict:
     folder_path = Path(path).expanduser().resolve()
     if not folder_path.exists():
@@ -129,3 +204,25 @@ def ingest_folder(path: str | Path, recursive: bool = True) -> dict:
             summary[key] += result[key]
 
     return summary
+
+
+def _store_uploaded_file(
+    *,
+    filename: str,
+    content: bytes,
+    relative_path: str | None,
+) -> Path:
+    UPLOADED_FILES_DIR.mkdir(parents=True, exist_ok=True)
+
+    target_path = UPLOADED_FILES_DIR / _sanitize_upload_relative_path(relative_path or filename)
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    target_path.write_bytes(content)
+    return target_path
+
+
+def _sanitize_upload_relative_path(relative_path: str) -> Path:
+    candidate = Path(relative_path)
+    safe_parts = [part for part in candidate.parts if part not in ("", ".", "..")]
+    if not safe_parts:
+        raise ValueError("Uploaded file path is empty")
+    return Path(*safe_parts)

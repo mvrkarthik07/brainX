@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+echo "BrainX backend sidecar is not built yet."
+echo "Run: bash scripts/build_backend_sidecar.sh"
+exit 1
+

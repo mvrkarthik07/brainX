@@ -3,6 +3,16 @@
   "windows": ["main"],
   "permissions": [
     "core:default",
+    "shell:default",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "binaries/brainx-backend",
+          "sidecar": true
+        }
+      ]
+    },
     "core:window:allow-close",
     "core:window:allow-minimize",
     "core:window:allow-toggle-maximize",

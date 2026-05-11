@@ -3,6 +3,16 @@
   "productName": "brainX",
   "version": "0.1.0",
   "identifier": "com.brainx.desktop",
+  "bundle": {
+    "externalBin": ["binaries/brainx-backend"],
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": ["https://example.com/brainx/latest.json"],
+      "pubkey": ""
+    }
+  },
   "build": {
     "beforeDevCommand": "npm run dev -- --host 127.0.0.1 --port 1420",
     "beforeBuildCommand": "npm run build",
